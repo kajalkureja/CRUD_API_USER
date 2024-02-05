@@ -4,15 +4,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
-
+import { TaskModule } from './task/task.module';
+import { Task } from './task/entities/task.entity';
 
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule.forRoot({
+      imports: [ConfigModule, ConfigModule.forRoot({
         isGlobal: true,
-        envFilePath: ".local.env",
+        envFilePath: ".env",
       }
       )],
       useFactory: (configService: ConfigService) => ({
@@ -24,11 +25,15 @@ import { ConfigService } from '@nestjs/config';
         database: configService.get('DB_DATABASE'),
         synchronize: configService.get<boolean>('DB_SYNC'),
         entities : [__dirname + '/**/*.entity{.ts,.js}'],
-        logging : true
+        logging : true,
+        
       }),
+      
       inject: [ConfigService],
     }),
-    UserModule
+    UserModule,
+    TaskModule,
+   
     
 
   ],

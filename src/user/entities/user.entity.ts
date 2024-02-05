@@ -19,4 +19,5 @@ createdAt: Date;
 
 @UpdateDateColumn()
 updatedAt: Date;
+    roles: any;
 }

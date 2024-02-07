@@ -1,60 +1,39 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-
+import { Role } from '../auth/role.entity';
+import { UserDto } from './user.dto';
+import { User } from './user.entity';
 
 @Injectable()
-export class UserService {
+export class UsersService {
+  constructor(@Inject('USER_REPOSITORY')
+  private userRepository: Repository<User>,
+  ) { }
 
-  //inject user repository
-
-  constructor(@InjectRepository(User) private readonly userRepository: Repository<User>
-  
-  ){
-
+  async findOne(username: string): Promise<User | undefined> {
+    const user = await this.userRepository.findOne({ where: { username }, relations: { roles: true } });
+    return user;
   }
-  
-  create(createUserDto: CreateUserDto) : Promise<User> {
 
-    if (!createUserDto.email) {
-      throw new BadRequestException('Email is required');
+  async getProfile(username: string): Promise<UserDto | undefined> {
+    const user = await this.userRepository.findOne({ where: { username } });
+    if (!user) {
+      return undefined;
     }
-    
-    let user: User = new User();
-    user.email = createUserDto.email;
-    user.name = createUserDto.name;
-    user.password = createUserDto.password;
-    return this.userRepository.save(user);
+    const userDto = new UserDto();
+    userDto.id = user.id;
+    userDto.username = user.username;
+    return userDto;
   }
 
-  findAll() : Promise<User[]>{
-    return this.userRepository.find();
+  async create(username: string, password: string): Promise<User | undefined> {
+    const user = new User();
+    user.username = username;
+    user.password = password;
+    const role = new Role();
+    role.id = 1;
+    user.roles = [role];
+    await this.userRepository.save(user);
+    return user;
   }
-
-  
-  findOne(id: number): Promise<User> {
-    return this.userRepository.findOne({
-      where: {
-        id,
-      },
-    });
-  }
-
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    let user: User = new User();
-    user.email = updateUserDto.email;
-    user.name = updateUserDto.name;
-    user.password = updateUserDto.password;
-    user.id = id;
-    return this.userRepository.save(user);
-  }
-
-  remove(id: number) {
-    return this.userRepository.delete(id);
-  }
-  
 }
